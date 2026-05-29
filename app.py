@@ -15,21 +15,33 @@ app = Flask(__name__)
 CHANNEL_ACCESS_TOKEN = os.getenv("CHANNEL_ACCESS_TOKEN")
 CHANNEL_SECRET = os.getenv("CHANNEL_SECRET")
 
-configuration = Configuration(access_token=CHANNEL_ACCESS_TOKEN)
+configuration = Configuration(
+    access_token=CHANNEL_ACCESS_TOKEN
+)
+
 handler = WebhookHandler(CHANNEL_SECRET)
+
 
 @app.route("/")
 def home():
     return "LINE Bot Running"
 
+
 @app.route("/callback", methods=["POST"])
 def callback():
 
+    signature = request.headers.get("X-Line-Signature")
+    body = request.get_data(as_text=True)
+
     print("================================")
     print("WEBHOOK HIT")
+    print(body)
     print("================================")
 
-    return "OK", 200
+    handler.handle(body, signature)
+
+    return "OK"
+
 
 @handler.add(MessageEvent, message=TextMessageContent)
 def handle_message(event):
@@ -46,10 +58,16 @@ def handle_message(event):
             ReplyMessageRequest(
                 reply_token=event.reply_token,
                 messages=[
-                    TextMessage(text=reply_text)
+                    TextMessage(
+                        text=reply_text
+                    )
                 ]
             )
         )
 
+
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=10000)
+    app.run(
+        host="0.0.0.0",
+        port=10000
+    )
