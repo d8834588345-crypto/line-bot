@@ -1,11 +1,21 @@
 from flask import Flask, request
 import os
 import gspread
+
 from google.oauth2.service_account import Credentials
+
+from linebot.v3.messaging import (
+    Configuration,
+    ApiClient,
+    MessagingApi,
+    ReplyMessageRequest,
+    TextMessage
+)
 
 app = Flask(__name__)
 
 SHEET_ID = os.getenv("GOOGLE_SHEET_ID")
+LINE_CHANNEL_ACCESS_TOKEN = os.getenv("LINE_CHANNEL_ACCESS_TOKEN")
 
 SCOPES = [
     "https://www.googleapis.com/auth/spreadsheets",
@@ -19,16 +29,20 @@ creds = Credentials.from_service_account_file(
 
 gc = gspread.authorize(creds)
 
+configuration = Configuration(
+    access_token=LINE_CHANNEL_ACCESS_TOKEN
+)
+
+
 @app.route("/")
 def home():
     return "LINE Bot Running"
+
 
 @app.route("/callback", methods=["POST"])
 def callback():
 
     body = request.get_json()
-
-    print(body)
 
     try:
 
@@ -40,7 +54,11 @@ def callback():
                 continue
 
             text = event["message"]["text"]
+            reply_token = event["replyToken"]
 
+            message_text = "查無資料"
+
+            # 找區域
             if text.startswith("找 "):
 
                 area = text.replace("找 ", "").strip()
@@ -56,18 +74,41 @@ def callback():
                     if area in str(row["行政區"]):
 
                         result.append(
-                            f"""
-🏠 {row['標題']}
-📍 {row['行政區']}
-💰 {row['租金']}
-🔗 {row['網址']}
-"""
+                            f"🏠 {row['標題']}\n"
+                            f"📍 {row['行政區']}\n"
+                            f"💰 {row['租金']}\n"
+                            f"🔗 {row['網址']}"
                         )
 
-                print(result)
+                if result:
+                    message_text = "\n\n".join(result[:5])
+                else:
+                    message_text = f"找不到 {area} 的案件"
+
+            elif text == "今日案件":
+                message_text = "今日案件功能建置中"
+
+            elif text == "租補客":
+                message_text = "租補客功能建置中"
+
+            elif text == "FB租客":
+                message_text = "FB租客功能建置中"
+
+            with ApiClient(configuration) as api_client:
+
+                line_bot_api = MessagingApi(api_client)
+
+                line_bot_api.reply_message(
+                    ReplyMessageRequest(
+                        reply_token=reply_token,
+                        messages=[
+                            TextMessage(text=message_text)
+                        ]
+                    )
+                )
 
     except Exception as e:
-        print(e)
+        print("ERROR:", e)
 
     return "OK", 200
 
