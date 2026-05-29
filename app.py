@@ -25,12 +25,11 @@ def home():
 @app.route("/callback", methods=["POST"])
 def callback():
 
-    signature = request.headers.get("X-Line-Signature")
-    body = request.get_data(as_text=True)
+    print("================================")
+    print("WEBHOOK HIT")
+    print("================================")
 
-    handler.handle(body, signature)
-
-    return "OK"
+    return "OK", 200
 
 @handler.add(MessageEvent, message=TextMessageContent)
 def handle_message(event):
