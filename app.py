@@ -72,8 +72,11 @@ def handle_message(event):
 
     try:
 
-        data = sheet.get_all_records()
+       data = sheet.get_all_records()
 
+print("==========")
+print(data[:5])
+print("==========")
         result = []
 
         for row in data:
