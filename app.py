@@ -38,7 +38,13 @@ def callback():
     print(body)
     print("================================")
 
-    handler.handle(body, signature)
+    try:
+        handler.handle(body, signature)
+        print("HANDLE SUCCESS")
+
+    except Exception as e:
+        print("HANDLE ERROR")
+        print(e)
 
     return "OK"
 
@@ -46,24 +52,34 @@ def callback():
 @handler.add(MessageEvent, message=TextMessageContent)
 def handle_message(event):
 
-    user_text = event.message.text
+    print("================================")
+    print("收到訊息")
+    print(event.message.text)
+    print("================================")
 
-    reply_text = f"你剛剛輸入：{user_text}"
+    try:
 
-    with ApiClient(configuration) as api_client:
+        with ApiClient(configuration) as api_client:
 
-        line_bot_api = MessagingApi(api_client)
+            line_bot_api = MessagingApi(api_client)
 
-        line_bot_api.reply_message(
-            ReplyMessageRequest(
-                reply_token=event.reply_token,
-                messages=[
-                    TextMessage(
-                        text=reply_text
-                    )
-                ]
+            line_bot_api.reply_message(
+                ReplyMessageRequest(
+                    reply_token=event.reply_token,
+                    messages=[
+                        TextMessage(
+                            text="測試成功"
+                        )
+                    ]
+                )
             )
-        )
+
+        print("回覆成功")
+
+    except Exception as e:
+
+        print("回覆失敗")
+        print(e)
 
 
 if __name__ == "__main__":
